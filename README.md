@@ -89,9 +89,15 @@ DeviceProcessEvents
 ---
 
 ### ✅ Step 5: Response
-- Reported findings to management.
-- No current action recommended until further instructions are provided.
-- Endpoint has not shown active exfiltration but should remain monitored.
+At the time of analysis, there was no confirmed evidence of data exfiltration. However, the behavior observed — including silent installation of 7-Zip via PowerShell and regular archiving of files into `.zip` format — indicates possible staging for future exfiltration.
+
+Immediate response actions:
+
+- 🔒 **Reported** findings to management for further review and decision-making.
+- 🧑‍💼 **Recommended** continued monitoring of `cavada-cyber-pc` for any outbound data movement, especially to external cloud services or unauthorized USB devices.
+- 🧰 **Suggested** isolating the device if any exfiltration activity is later confirmed.
+- ⚙️ **Flagged** the PowerShell script activity for deeper forensic review.
+- ✅ **Ensured** relevant logs and telemetry were preserved for incident tracking.
 
 ---
 
