@@ -50,7 +50,6 @@
 ### ✅ Step 1: Preparation
 > **Hypothesis:** John Doe may attempt to archive sensitive company files and exfiltrate them using cloud sync or removable drives.
 
- [S3SDE6 – Unauthorized File Transfers](https://raw.githubusercontent.com/Samuel-Cavada/Scenario-3-Suspected-Data-Exfiltration-Employee/main/images/S3SDE6.jpg)  
 
 ---
 
@@ -62,6 +61,7 @@ DeviceFileEvents
 | where FileName endswith ".zip"
 | order by Timestamp desc
 ```
+![S3SDE6 – Unauthorized File Transfers](https://raw.githubusercontent.com/Samuel-Cavada/Scenario-3-Suspected-Data-Exfiltration-Employee/main/images/S3SDE6.jpg)
 
 ---
 
@@ -77,6 +77,10 @@ DeviceProcessEvents
 | order by Timestamp desc
 | project Timestamp, DeviceName, ActionType, FileName, ProcessCommandLine
 ```
+
+![S3SDE4 – Data Extraction Command](https://raw.githubusercontent.com/Samuel-Cavada/Scenario-3-Suspected-Data-Exfiltration-Employee/main/images/S3SDE4.jpg)
+
+
 
 > ✅ Discovery: A PowerShell script silently installed 7-Zip (`msiexec.exe /quiet`) and used it to create archive files at regular intervals.
 
