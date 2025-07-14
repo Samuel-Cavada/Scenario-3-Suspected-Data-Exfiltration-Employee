@@ -50,6 +50,8 @@
 ### ✅ Step 1: Preparation
 > **Hypothesis:** John Doe may attempt to archive sensitive company files and exfiltrate them using cloud sync or removable drives.
 
+ [S3SDE6 – Unauthorized File Transfers](https://raw.githubusercontent.com/Samuel-Cavada/Scenario-3-Suspected-Data-Exfiltration-Employee/main/images/S3SDE6.jpg)  
+
 ---
 
 ### ✅ Step 2: Data Collection
